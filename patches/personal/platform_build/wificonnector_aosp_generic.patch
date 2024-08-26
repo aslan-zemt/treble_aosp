@@ -1,0 +1,61 @@
+From 54991a0208e562e779d4300fa79cd3f4239cb9c4 Mon Sep 17 00:00:00 2001
+From: zemt <aslan.zemt@gmail.com>
+Date: Sun, 25 Aug 2024 20:57:45 +0500
+Subject: [PATCH] Change aosp generic makefiles
+
+Change-Id: I9b925d2b9400f4273512767f590f9e73e4069b38
+---
+ target/product/aosp_arm64.mk     | 14 ++++++++++----
+ target/product/generic_system.mk |  5 +++++
+ 2 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/target/product/aosp_arm64.mk b/target/product/aosp_arm64.mk
+index d3514a50de..72f7b532ae 100644
+--- a/target/product/aosp_arm64.mk
++++ b/target/product/aosp_arm64.mk
+@@ -66,9 +66,15 @@ MODULE_BUILD_FROM_SOURCE ?= true
+ 
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/gsi_release.mk)
+ endif
++# Boot animation
++PRODUCT_COPY_FILES += \
++    KDSS_bootanimation/bootanimation.zip:system/media/bootanimation.zip
+ 
+-
+-PRODUCT_NAME := aosp_arm64
++#PRODUCT_NAME := aosp_arm64
+ PRODUCT_DEVICE := generic_arm64
+-PRODUCT_BRAND := Android
+-PRODUCT_MODEL := AOSP on ARM64
++#PRODUCT_BRAND := Android
++#PRODUCT_MODEL := AOSP on ARM64
++
++PRODUCT_NAME := wScout
++PRODUCT_BRAND := IRPLAB
++PRODUCT_MODEL := wScout by IRPLAB
+diff --git a/target/product/generic_system.mk b/target/product/generic_system.mk
+index 4c3702aaa6..337128cb15 100644
+--- a/target/product/generic_system.mk
++++ b/target/product/generic_system.mk
+@@ -89,6 +89,8 @@ PRODUCT_PACKAGES += \
+ PRODUCT_PACKAGES += \
+     libhidltransport \
+     libhwbinder \
++    wificonnector \
++    busybox \
+ 
+ PRODUCT_PACKAGES_DEBUG += \
+     avbctl \
+@@ -120,6 +122,9 @@ PRODUCT_COPY_FILES += \
+     system/core/rootdir/init.zygote32.rc:system/etc/init/hw/init.zygote32.rc \
+     system/core/rootdir/init.zygote64.rc:system/etc/init/hw/init.zygote64.rc \
+     system/core/rootdir/init.zygote64_32.rc:system/etc/init/hw/init.zygote64_32.rc \
++    wificonnector/wificonnector.rc:system/etc/init/wificonnector.rc \
++    busybox/busybox:system/etc/init/busybox \
++    busybox/busybox.rc:system/etc/init/busybox.rc \
+ 
+ # Enable dynamic partition size
+ PRODUCT_USE_DYNAMIC_PARTITION_SIZE := true
+-- 
+2.46.0
+

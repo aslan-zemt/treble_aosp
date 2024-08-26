@@ -1,0 +1,80 @@
+From ffb28ed3f258ffc2827b8e7792ea32c8779a931a Mon Sep 17 00:00:00 2001
+From: zemt <aslan.zemt@gmail.com>
+Date: Sun, 25 Aug 2024 21:01:05 +0500
+Subject: [PATCH] change sepolicy
+
+Change-Id: I338d1d73c9c6c27ab9e76d50c85fd2b51463cdf7
+---
+ private/busybox.te       | 10 ++++++++++
+ private/file_contexts    |  5 +++++
+ private/wificonnector.te | 24 ++++++++++++++++++++++++
+ 3 files changed, 39 insertions(+)
+ create mode 100644 private/busybox.te
+ create mode 100644 private/wificonnector.te
+
+diff --git a/private/busybox.te b/private/busybox.te
+new file mode 100644
+index 000000000..e44425dfb
+--- /dev/null
++++ b/private/busybox.te
+@@ -0,0 +1,10 @@
++# Определение типа для исполняемого файла BusyBox
++type busybox_exec, exec_type, file_type, system_file_type;
++
++# Определение домена для процессов BusyBox
++type busybox, domain;
++
++# Правило перехода домена при выполнении BusyBox
++domain_auto_trans(untrusted_app, busybox_exec, busybox)
++
++permissive busybox;
+diff --git a/private/file_contexts b/private/file_contexts
+index 63b3d1eff..74b80198c 100644
+--- a/private/file_contexts
++++ b/private/file_contexts
+@@ -22,7 +22,12 @@
+ 
+ # Root
+ /                   u:object_r:rootfs:s0
++#wificonnector
++/system/bin/wificonnector u:object_r:wificonnector_exec:s0
+ 
++#busybox
++/system/bin/busybox u:object_r:busybox_exec:s0
++/system/bin/udhcpc u:object_r:busybox_exec:s0
+ # Data files
+ /adb_keys           u:object_r:adb_keys_file:s0
+ /build\.prop        u:object_r:rootfs:s0
+diff --git a/private/wificonnector.te b/private/wificonnector.te
+new file mode 100644
+index 000000000..2fee4bf18
+--- /dev/null
++++ b/private/wificonnector.te
+@@ -0,0 +1,24 @@
++# wificonnector domain policy
++type wificonnector, domain;
++permissive wificonnector;
++permissive netd;
++permissive netd_exec;
++type wificonnector_exec, exec_type, file_type;
++
++init_daemon_domain(wificonnector)
++
++# Здесь вы можете добавить дополнительные правила, которые мы обсуждали ранее,
++# но они не будут строго применяться из-за режима permissive
++
++# Разрешить общее взаимодействие между wificonnector и netd
++allow wificonnector netd:unix_stream_socket { read write };
++allow netd wificonnector:unix_stream_socket { read write };
++
++# Разрешить wificonnector подключаться к netd
++allow wificonnector netd:unix_stream_socket connectto;
++
++# Если необходимо, разрешить обмен binder-сообщениями
++binder_call(wificonnector, netd)
++binder_call(netd, wificonnector)
++
++#allow vendor_location wificonnector:unix_dgram_socket sendto;
+-- 
+2.46.0
+
