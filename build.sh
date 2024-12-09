@@ -89,14 +89,8 @@ buildVndkliteVariant() {
 }
 
 buildVariants() {
-#    buildVariant treble_a64_bvN
-#    buildVariant treble_a64_bgN
-#    buildVariant treble_arm64_bvN
-    buildVariant treble_arm64_bgN
-#    buildVndkliteVariant treble_a64_bvN
-#    buildVndkliteVariant treble_a64_bgN
-#    buildVndkliteVariant treble_arm64_bvN
-#    buildVndkliteVariant treble_arm64_bgN
+     buildVariant treble_arm64_bvN
+     buildVariant treble_arm64_bvS
 }
 
 generatePackages() {
@@ -128,7 +122,7 @@ generateOta() {
             [[ "$filename" == *"-vndklite"* ]] && vndk="-vndklite" || vndk=""
             name="treble_${arch}_b${variant}N${vndk}"
             size=$(wc -c $file | awk '{print $1}')
-            url="https://github.com/ponces/treble_aosp/releases/download/$version/$filename"
+            #url="https://github.com/ponces/treble_aosp/releases/download/$version/$filename"
             json="${json} {\"name\": \"$name\",\"size\": \"$size\",\"url\": \"$url\"},"
         done
         json="${json%?}]}"

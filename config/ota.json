@@ -1,11 +1,11 @@
 {
-  "version": "v2024.08.26",
-  "date": "1724647378",
+  "version": "v2024.10.16",
+  "date": "1729055045",
   "variants": [
     {
-      "name": "treble_arm64_bvN",
-      "size": "817729784",
-      "url": "https://github.com/ponces/treble_aosp/releases/download/v2024.08.26/aosp-arm64-ab-vanilla-14.0-20240826.img.xz"
+      "name": "treble_arm64_bgN",
+      "size": "819618796",
+      "url": ""
     }
   ]
 }

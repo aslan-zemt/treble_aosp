@@ -1,18 +1,26 @@
-From 1586c804a971422cd93de3743ae67d27212986be Mon Sep 17 00:00:00 2001
-From: Alberto Ponces <ponces26@gmail.com>
-Date: Tue, 8 Jun 2021 09:44:26 +0100
+From 5a703070f7a71e183018fc7c093f1c06e9b65713 Mon Sep 17 00:00:00 2001
+From: zemt <aslan.zemt@gmail.com>
+Date: Wed, 4 Dec 2024 13:15:36 +0500
 Subject: [PATCH] misc: Remove securize preference
 
 ---
- .../java/me/phh/treble/app/MiscSettings.kt    | 33 -------------------
+ .../java/me/phh/treble/app/MiscSettings.kt    | 34 -------------------
  app/src/main/res/xml/pref_misc.xml            |  2 --
- 2 files changed, 35 deletions(-)
+ 2 files changed, 36 deletions(-)
 
 diff --git a/app/src/main/java/me/phh/treble/app/MiscSettings.kt b/app/src/main/java/me/phh/treble/app/MiscSettings.kt
-index dc2e0e3..80530b1 100644
+index e80012a..053782e 100644
 --- a/app/src/main/java/me/phh/treble/app/MiscSettings.kt
 +++ b/app/src/main/java/me/phh/treble/app/MiscSettings.kt
-@@ -49,39 +49,6 @@ class MiscSettingsFragment : SettingsFragment() {
+@@ -21,7 +21,6 @@ object MiscSettings : Settings {
+     val disableButtonsBacklight = "key_misc_disable_buttons_backlight"
+     val forceNavbarOff = "key_misc_force_navbar_off"
+     val bluetooth = "key_misc_bluetooth"
+-    val securize = "key_misc_securize"
+     val secureAdb = "key_misc_secure_adb"
+     val removeTelephony = "key_misc_removetelephony"
+     val remotectl = "key_misc_remotectl"
+@@ -59,39 +58,6 @@ class MiscSettingsFragment : SettingsFragment() {
      override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
          super.onCreatePreferences(savedInstanceState, rootKey)
  
@@ -53,18 +61,17 @@ index dc2e0e3..80530b1 100644
          removeTelephonyPref!!.setOnPreferenceClickListener {
  
 diff --git a/app/src/main/res/xml/pref_misc.xml b/app/src/main/res/xml/pref_misc.xml
-index 4210106..9176674 100644
+index a8221a7..950d3a2 100644
 --- a/app/src/main/res/xml/pref_misc.xml
 +++ b/app/src/main/res/xml/pref_misc.xml
-@@ -161,8 +161,6 @@
+@@ -203,8 +203,6 @@
              android:entryValues="@array/pref_misc_fod_color_values"
              android:key="key_misc_fod_color"
              android:title="Under-display fp color" />
 -        <Preference android:title="Securize"
 -            android:key="key_misc_securize" />
-     </PreferenceCategory>
-     <PreferenceCategory android:title="Debugging">
-         <Preference android:title="Debug Sensors">
+         <SwitchPreference
+             android:defaultValue="false"
+             android:key="key_misc_secure_adb"
 -- 
-2.34.1
-
+2.47.1

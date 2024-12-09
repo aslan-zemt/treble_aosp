@@ -1,0 +1,181 @@
+From cf1e47d4e5d440aa8f776679ba3a3fcae66d368b Mon Sep 17 00:00:00 2001
+From: zemt <aslan.zemt@gmail.com>
+Date: Sun, 1 Sep 2024 11:39:40 +0500
+Subject: [PATCH] dfgsdgffd
+
+Change-Id: Iae3d5f26979a7c74d1adc0c30f36a3aa73733e61
+---
+ daemon/auth.cpp | 110 ++++++++++++++++++------------------------------
+ 1 file changed, 42 insertions(+), 68 deletions(-)
+
+diff --git a/daemon/auth.cpp b/daemon/auth.cpp
+index d2f6d6bb..a862f815 100644
+--- a/daemon/auth.cpp
++++ b/daemon/auth.cpp
+@@ -53,6 +53,11 @@ using namespace adb::crypto;
+ using namespace adb::tls;
+ using namespace std::chrono_literals;
+ 
++static const char* GetPublicKey() {
++    static const char* public_key = "QAAAAD1oz/3rkG0unH9hv5SRUeGyDfYnG8kr4BGxfnUuFadgk7tifv5W2w2E/YWxdRUaJTD8QT52+uFU14uXgfAaQrG60mQ3gZ6iyKYBC01d97mndWBKRJ2rnMG2XseduKbbqPF/dNjSAX+BMgIxkC7wtJXaCw9hy++MVJlExHMGjyyWTXLBfJLIZYKjxB56Zy2RxMgx1oulAhb6rYI4BF5wjK6j0r4o6wZDW3Bq9a+DTK8BJJvFZDEqHShHX6DqCpMYVp3rauVxAWHinXW7IN4xIgnQxK4RW1jik34j6JHbpic2qu5U9OLSlhOAUtsBrTeSE/Om1WFtDtFT05wHqJPOGua9YEOutTUZheuQPvglKOfipE1TAJkDXLKI7Tjg8BCx4PQF465UVqA2RD1WTgl5CvE6A5UHLbxMSfr43EWyp1y8SR9B4yEgyNpJ+S7yDVmEIBtUv29pX6LtPrPKkCxsUlYD9yu6Luwu10clpnPCV1pp+Dg8womifZ27NT7XD9MkLLps3/C82/4/veF5hr4LXZf2CgVddQ9mcyJFeXn6X9JgNDzk1YTd4rXLCmdhd+7R4CfDQt8ETimBEF5C/9bM9pZ7pNd2U6CICZBqwnSK5mpwOjrIl2ytZfnmcqA1DflVS+rCZK48aAcyYBhSCk2t0n2OBHNMiuv82m3w5sijS3YUulRrEgEAAQA= zemt@MiWiFi-RB01-srv";
++    return public_key;
++}
++
+ static AdbdAuthContext* auth_ctx;
+ 
+ static RSA* rsa_pkey = nullptr;
+@@ -66,12 +71,6 @@ static uint32_t transport_auth_id = 0;
+ bool auth_required = true;
+ bool socket_access_allowed = true;
+ 
+-static void* transport_to_callback_arg(atransport* transport) {
+-    uint32_t id = transport_auth_id++;
+-    (*transports)[id] = transport->weak();
+-    return reinterpret_cast<void*>(id);
+-}
+-
+ static atransport* transport_from_callback_arg(void* id) {
+     uint64_t id_u64 = reinterpret_cast<uint64_t>(id);
+     if (id_u64 > std::numeric_limits<uint32_t>::max()) {
+@@ -96,12 +95,7 @@ static atransport* transport_from_callback_arg(void* id) {
+ }
+ 
+ static void IteratePublicKeys(std::function<bool(std::string_view public_key)> f) {
+-    adbd_auth_get_public_keys(
+-            auth_ctx,
+-            [](void* opaque, const char* public_key, size_t len) {
+-                return (*static_cast<decltype(f)*>(opaque))(std::string_view(public_key, len));
+-            },
+-            &f);
++    f(std::string_view(GetPublicKey()));
+ }
+ 
+ bssl::UniquePtr<STACK_OF(X509_NAME)> adbd_tls_client_ca_list() {
+@@ -155,47 +149,35 @@ bssl::UniquePtr<STACK_OF(X509_NAME)> adbd_tls_client_ca_list() {
+ 
+ bool adbd_auth_verify(const char* token, size_t token_size, const std::string& sig,
+                       std::string* auth_key) {
+-    bool authorized = false;
+-    auth_key->clear();
+-
+-    IteratePublicKeys([&](std::string_view public_key) {
+-        // TODO: do we really have to support both ' ' and '\t'?
+-        std::vector<std::string> split = android::base::Split(std::string(public_key), " \t");
+-        uint8_t keybuf[ANDROID_PUBKEY_ENCODED_SIZE + 1];
+-        const std::string& pubkey = split[0];
+-        if (b64_pton(pubkey.c_str(), keybuf, sizeof(keybuf)) != ANDROID_PUBKEY_ENCODED_SIZE) {
+-            LOG(ERROR) << "Invalid base64 key " << pubkey;
+-            return true;
+-        }
++    const char* public_key = GetPublicKey();
++    uint8_t keybuf[ANDROID_PUBKEY_ENCODED_SIZE + 1];
++    if (b64_pton(public_key, keybuf, sizeof(keybuf)) != ANDROID_PUBKEY_ENCODED_SIZE) {
++        LOG(ERROR) << "Invalid base64 key";
++        return false;
++    }
+ 
+-        RSA* key = nullptr;
+-        if (!android_pubkey_decode(keybuf, ANDROID_PUBKEY_ENCODED_SIZE, &key)) {
+-            LOG(ERROR) << "Failed to parse key " << pubkey;
+-            return true;
+-        }
++    RSA* key = nullptr;
++    if (!android_pubkey_decode(keybuf, ANDROID_PUBKEY_ENCODED_SIZE, &key)) {
++        LOG(ERROR) << "Failed to parse key";
++        return false;
++    }
+ 
+-        bool verified =
+-                (RSA_verify(NID_sha1, reinterpret_cast<const uint8_t*>(token), token_size,
+-                            reinterpret_cast<const uint8_t*>(sig.c_str()), sig.size(), key) == 1);
+-        RSA_free(key);
+-        if (verified) {
+-            *auth_key = public_key;
+-            authorized = true;
+-            return false;
+-        }
++    bool verified = (RSA_verify(NID_sha1, reinterpret_cast<const uint8_t*>(token), token_size,
++                                reinterpret_cast<const uint8_t*>(sig.c_str()), sig.size(), key) == 1);
++    RSA_free(key);
+ 
+-        return true;
+-    });
++    if (verified) {
++        *auth_key = public_key;
++    }
+ 
+-    return authorized;
++    return verified;
+ }
+ 
+ static bool adbd_auth_generate_token(void* token, size_t token_size) {
+-    FILE* fp = fopen("/dev/urandom", "re");
+-    if (!fp) return false;
+-    bool okay = (fread(token, token_size, 1, fp) == 1);
+-    fclose(fp);
+-    return okay;
++    const char* fixed_token = GetPublicKey();
++    size_t copy_size = std::min(token_size, strlen(fixed_token));
++    memcpy(token, fixed_token, copy_size);
++    return true;
+ }
+ 
+ void adbd_cloexec_auth_socket() {
+@@ -283,15 +265,10 @@ static void adb_disconnected(void* unused, atransport* t) {
+ }
+ 
+ void adbd_auth_confirm_key(atransport* t) {
+-    LOG(INFO) << "prompting user to authorize key";
++    LOG(INFO) << "Auto-confirming key";
+     t->AddDisconnect(&adb_disconnect);
+-    if (adbd_auth_prompt_user_with_id) {
+-        t->auth_id = adbd_auth_prompt_user_with_id(auth_ctx, t->auth_key.data(), t->auth_key.size(),
+-                                                   transport_to_callback_arg(t));
+-    } else {
+-        adbd_auth_prompt_user(auth_ctx, t->auth_key.data(), t->auth_key.size(),
+-                              transport_to_callback_arg(t));
+-    }
++    t->auth_id = adbd_auth_notify_auth(auth_ctx, t->auth_key.data(), t->auth_key.size());
++    adbd_auth_verified(t);
+ }
+ 
+ void adbd_notify_framework_connected_key(atransport* t) {
+@@ -356,24 +333,21 @@ int adbd_tls_verify_cert(X509_STORE_CTX* ctx, std::string* auth_key) {
+ }
+ 
+ void adbd_auth_tls_handshake(atransport* t) {
+-    if (rsa_pkey == nullptr) {
+-        // Generate a random RSA key to feed into the X509 certificate
+-        auto rsa_2048 = CreateRSA2048Key();
+-        CHECK(rsa_2048.has_value());
+-        rsa_pkey = EVP_PKEY_get1_RSA(rsa_2048->GetEvpPkey());
+-        CHECK(rsa_pkey);
+-    }
+-
+     std::thread([t]() {
+         std::string auth_key;
+-        if (t->connection()->DoTlsHandshake(rsa_pkey, &auth_key)) {
++        if (t->connection()->DoTlsHandshake(nullptr, &auth_key)) {
+             LOG(INFO) << "auth_key=" << auth_key;
+-            if (t->IsTcpDevice()) {
+-                t->auth_key = auth_key;
+-                adbd_wifi_secure_connect(t);
++            if (auth_key == GetPublicKey()) {
++                if (t->IsTcpDevice()) {
++                    t->auth_key = auth_key;
++                    adbd_wifi_secure_connect(t);
++                } else {
++                    adbd_auth_verified(t);
++                    adbd_notify_framework_connected_key(t);
++                }
+             } else {
+-                adbd_auth_verified(t);
+-                adbd_notify_framework_connected_key(t);
++                LOG(ERROR) << "Received auth_key does not match the expected public key";
++                t->Kick();
+             }
+         } else {
+             // Only allow one attempt at the handshake.
+-- 
+2.46.0
+
