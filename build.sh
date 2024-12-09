@@ -27,6 +27,9 @@ initRepos() {
 }
 
 syncRepos() {
+    echo "-->repo clearing"
+    repo forall -c "git am --abort && git reset --hard && git clean -fd"
+    echo
     echo "--> Syncing repos"
     repo sync -c --force-sync --no-clone-bundle --no-tags -j$(nproc --all) || repo sync -c --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
     echo
